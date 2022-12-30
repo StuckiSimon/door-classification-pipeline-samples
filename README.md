@@ -10,6 +10,10 @@ This folder contains the code samples for the image labeling pipeline. The image
 
 This folder contains the code samples for the blender renderer pipeline. The blender renderer pipeline is used to render the images from the 3D models.
 
+## yolo-darknet
+
+YOLO Darknet for door detection.
+
 ## server
 
 This folder contains the code samples for the server. The server is responsible for classification of the images.
