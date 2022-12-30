@@ -675,6 +675,18 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
                 return;
             strtok(input, "\n");
         }
+
+        char outputFileName[512];
+        strcpy(outputFileName, input);
+        strcat(outputFileName, ".txt");
+
+        FILE *f = fopen(outputFileName, "w");
+        if (f == NULL)
+        {
+            printf("Error opening file!\n");
+            exit(1);
+        }
+
         image im = load_image_color(input, 0, 0);
         image sized = letterbox_image(im, net->w, net->h);
         // image sized = resize_image(im, net->w, net->h);
@@ -693,7 +705,43 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         // if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         if (nms)
             do_nms_sort(dets, nboxes, l.classes, nms);
-        draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
+        detection *detPointer = dets;
+
+        int i, j;
+        int num = nboxes;
+        int classes = l.classes;
+
+        for (i = 0; i < num; ++i)
+        {
+            char labelstr[4096] = {0};
+            int class = -1;
+            for (j = 0; j < classes; ++j)
+            {
+                if (dets[i].prob[j] > thresh)
+                {
+                    if (class < 0)
+                    {
+                        strcat(labelstr, names[j]);
+                        class = j;
+                    }
+                    else
+                    {
+                        // use "-" instead of "," to prevent confusion with CSV format
+                        strcat(labelstr, "-");
+                        strcat(labelstr, names[j]);
+                    }
+                    printf("%s: %.0f%%\n", names[j], dets[i].prob[j] * 100);
+                }
+            }
+            if (class >= 0)
+            {
+                fprintf(f, "%s, ", labelstr);
+
+                // x, y, w, h
+                box b = dets[i].bbox;
+                fprintf(f, "%f, %f, %f, %f\n", b.x, b.y, b.w, b.h);
+            }
+        }
         free_detections(dets, nboxes);
         if (outfile)
         {
@@ -710,6 +758,8 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
 
         free_image(im);
         free_image(sized);
+        fclose(f);
+
         if (filename)
             break;
     }
